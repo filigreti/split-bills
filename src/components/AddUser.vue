@@ -1,7 +1,17 @@
 <template>
   <div class="add-user">
-    <b-modal v-model="modalProp" hide-header id="modal-center">
+    <b-modal ref="my-modal" v-model="modalProp" hide-header id="modal-center">
       <div class="modal-cont">
+        <b-alert
+          class="new-area"
+          :show="dismissCountDown"
+          dismissible
+          fade
+          :class="status == 'Error' ? ['bg-danger','text-white'] : ['bg-primary','text-white']"
+          @dismiss-count-down="countDownChanged"
+        >
+          <div v-for="(err, index) in error" :key="index">{{ err[0] }}</div>
+        </b-alert>
         <div class="header d-flex justify-content-between align-items-center px-4 pt-3">
           <h3>
             Create Bill for
@@ -15,7 +25,7 @@
             />
             {{form == 1 ? 'Person' : 'People'}}
           </h3>
-          <i @click="$bvModal.hide('modal-center')" class="fas fa-times fa-lg"></i>
+          <i @click="cancel()" class="fas fa-times fa-lg"></i>
         </div>
         <div class="mt-4 px-4 d">
           <div>
@@ -23,7 +33,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <input
                 class="email-box"
-                type="email"
+                type="text"
                 placeholder="Enter Bill Title"
                 v-model="bill.title"
               />
@@ -36,7 +46,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <input
                 class="email-box"
-                type="email"
+                type="text"
                 placeholder="Enter Description"
                 v-model="bill.description"
               />
@@ -52,16 +62,21 @@
             <div class="d-flex align-items-center">
               <div>
                 <h6 class="email-text">Email Address</h6>
-                <input
-                  class="email-box"
-                  type="email"
-                  placeholder="Enter Email Address"
-                  v-model="x.email"
-                />
+                <div class="d-flex align-items-center">
+                  <input
+                    class="email-box"
+                    type="email"
+                    placeholder="Enter Email Address"
+                    v-model="x.email"
+                  />
+                </div>
               </div>
               <div class="ml-4">
                 <h6 class="email-text">Amount</h6>
-                <input class="price-box" type="email" placeholder="Amount" v-model="x.amount" />
+                <div class="d-flex align-items-center">
+                  <input class="price-box" type="number" placeholder="Amount" v-model="x.amount" />
+                  <i v-if="index > 0" @click="remove(index)" class="far fa-trash-alt ml-5"></i>
+                </div>
               </div>
             </div>
           </div>
@@ -75,13 +90,17 @@
 </template>
 
 <script>
-import { mapMutations } from "vuex";
+import { mapActions } from "vuex";
 export default {
   props: ["show"],
   data() {
     return {
       form: 1,
+      status: "",
       open: null,
+      error: null,
+      dismissSecs: 2,
+      dismissCountDown: 0,
       bill: {
         user_account_id: this.$store.state.user.user_account_id,
         title: "",
@@ -116,6 +135,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions(["createBill", "getBills"]),
     updateValue(x) {
       const value = x.target.value;
       if (value === 0 || value === null || value === "") {
@@ -124,16 +144,57 @@ export default {
         this.form = 10;
       }
     },
-    getBillData() {
-      console.log(this.bill);
+    async getBillData() {
+      try {
+        let res = await this.createBill(this.bill);
+        let Info = ["New Bill Created"];
+        if (res.data.status == "ok") this.status = "";
+        this.status = "ok";
+        this.getBills();
+        this.error = [];
+        this.error.push(Info);
+        this.dismissCountDown = this.dismissSecs;
+        this.restore();
+        setTimeout(() => {
+          this.$refs["my-modal"].hide();
+        }, 3000);
+      } catch (err) {
+        this.status = "";
+        this.error = null;
+        this.status = "Error";
+        this.error = err.response.data.message;
+        this.dismissCountDown = this.dismissSecs;
+      }
     },
-
+    cancel() {
+      this.restore();
+      this.$refs["my-modal"].hide();
+    },
+    remove(x) {
+      this.$delete(this.bill.recipients, x);
+      this.form = this.bill.recipients.length;
+    },
     makeRecepientsObj(x) {
       var recepients = {};
       for (var i = 0; i < x; ++i) {
         recepients[i];
       }
       return recepients;
+    },
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+    restore() {
+      this.bill.title = "";
+      this.bill.description = "";
+      this.form = 1;
+      this.status = "";
+      this.bill.recipients = [
+        {
+          email: "",
+          amount: ""
+        }
+      ];
     }
   }
 };
@@ -166,12 +227,7 @@ export default {
   font-size: 14px;
   outline: none;
 }
-/* .email-plus {
-  position: fixed;
-  bottom: 28.5vh;
-  left: 28vw;
-  z-index: 2;
-} */
+
 .modal-cont {
   height: 55vh;
   padding: 0px 40px 10px;
@@ -184,9 +240,14 @@ export default {
 .btn-blue {
   background-color: #3f84f6;
   color: white;
-  width: 77%;
+  width: 80%;
   padding: 15px 0;
   font-size: 12px;
   border-radius: 0px;
+}
+.new-area {
+  position: fixed;
+  right: 10px;
+  z-index: 100000;
 }
 </style>

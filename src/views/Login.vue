@@ -65,6 +65,7 @@ export default {
         let res = await this.loginUser(this.loginForm);
         if (res.data.status == "ok") this.$router.push("/home");
       } catch (err) {
+        console.log(err);
         this.error = null;
         this.error = err.response.data.message;
         this.dismissCountDown = this.dismissSecs;

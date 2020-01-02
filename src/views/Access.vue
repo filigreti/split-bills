@@ -110,7 +110,7 @@ export default {
 }
 
 .btn-old {
-  width: 70px;
+  width: 80px;
   outline: none !important;
   box-shadow: 0px 2px 32px 10px rgba(0, 0, 0, 0.39);
   background-image: linear-gradient(
