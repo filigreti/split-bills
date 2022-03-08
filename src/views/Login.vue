@@ -25,7 +25,7 @@
     </div>
     <div class="mt-4">
       <h6 class="text-white pt-3">
-        PASSWORD
+        PASSWORDs
       </h6>
       <input
         class="input-area"
@@ -50,12 +50,12 @@ export default {
     return {
       loginForm: {
         email: "",
-        password: ""
+        password: "",
       },
       error: null,
       dismissSecs: 5,
       dismissCountDown: 0,
-      btnDisabled: false
+      btnDisabled: false,
     };
   },
   methods: {
@@ -73,8 +73,8 @@ export default {
     },
     countDownChanged(dismissCountDown) {
       this.dismissCountDown = dismissCountDown;
-    }
-  }
+    },
+  },
 };
 </script>
 
